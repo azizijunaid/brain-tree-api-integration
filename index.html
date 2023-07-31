@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://js.braintreegateway.com/web/dropin/1.39.0/js/dropin.min.js"></script>
+    <title>Payment</title>
+    <script
+      src="http://code.jquery.com/jquery-3.2.1.min.js"
+      crossorigin="anonymous"
+    ></script>
+
+    <script src='https://maxcdn.bootstrapcdn.com/bootstrap/4.3.0/js/bootstrap.min.js'></script>
+    <script src='https://js.braintreegateway.com/web/3.96.1/js/hosted-fields.min.js'></script>
+    <script src='https://js.braintreegateway.com/web/3.96.1/js/client.min.js'></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.3.0/css/bootstrap.min.css">
+    <style>
+      #dropin-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .dropin-container-btn {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .button {
+        cursor: pointer;
+        font-weight: 500;
+        left: 3px;
+        line-height: inherit;
+        position: relative;
+        text-decoration: none;
+        text-align: center;
+        border-style: solid;
+        border-width: 1px;
+        border-radius: 3px;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        display: inline-block;
+      }
+
+      .button--small {
+        padding: 10px 20px;
+        font-size: 0.875rem;
+      }
+
+      .button--green {
+        outline: none;
+        background-color: #64d18a;
+        border-color: #64d18a;
+        color: white;
+        transition: all 200ms ease;
+      }
+
+      .button--green:hover {
+        background-color: #8bdda8;
+        color: white;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="dropin-container"></div>
+    <div class="dropin-container-btn">
+      <button id="submit-button" class="button button--small button--green">
+        Purchase
+      </button>
+
+
+      <div id="checkout-message"></div>
+      <div id="checkout-message"></div>
+
+    </div>
+    <script>
+      const button = document.querySelector('#submit-button');
+      braintree.dropin.create(
+        {
+          authorization: 'sandbox_6mzbkbhs_dzm5sjr2pc48gzjp',
+          selector: '#dropin-container',
+        },
+        (err, instance) => {
+          button.addEventListener('click', function () {
+            instance.requestPaymentMethod(function (err, payload) {
+
+              $.ajax({
+                type: 'POST',
+                url: 'http://localhost:3000/payment/checkout',
+                data: { paymentMethodNonce: payload.nonce },
+              }).done((result) => {
+                // Tear down the Drop-in UI
+                instance.teardown(function (teardownErr) {
+                  if (teardownErr) {
+                    console.error('Could not tear down Drop-in UI!');
+                  } else {
+                    console.info('Drop-in UI has been torn down!');
+                    // Remove the 'Submit payment' button
+                    $('#submit-button').remove();
+                  }
+                });
+
+                if (result.status) {
+                  $('#checkout-message').html(
+                    '<h1>Success</h1><p>Your Drop-in UI is working! Check your <a href="https://sandbox.braintreegateway.com/login">sandbox Control Panel</a> for your test transactions.</p><p>Refresh to try another transaction.</p>'
+                  );
+                } else {
+                  $('#checkout-message').html(
+                    '<h1>Error</h1><p>Check your console.</p>'
+                  );
+                }
+              });
+            });
+          });
+        }
+      );
+    </script>
+  </body>
+</html>
